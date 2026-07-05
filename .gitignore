@@ -7,6 +7,12 @@ backend/node_modules/
 # backend environment variables
 backend/.env
 
+# IDE & AI assistant files
+.vscode/
+.claude/
+AGENTS.md
+CLAUDE.md
+
 # Expo
 .expo/
 dist/
