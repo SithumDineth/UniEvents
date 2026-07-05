@@ -1,98 +1,220 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, ActivityIndicator } from "react-native";
+import { Calendar, Sparkles } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { useTheme } from "../contexts/ThemeContext";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function SplashScreen() {
+  const router = useRouter();
+  const { theme: T } = useTheme();
+  const [isLoading, setIsLoading] = useState(true);
+  const [showButton, setShowButton] = useState(false);
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  // Animations
+  const iconScale = useRef(new Animated.Value(0)).current;
+  const iconOpacity = useRef(new Animated.Value(0)).current;
+  const titleSlide = useRef(new Animated.Value(30)).current;
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  const featuresOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Start entrance animations
+    Animated.parallel([
+      Animated.timing(iconScale, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+        easing: Easing.elastic(1),
+      }),
+      Animated.timing(iconOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Animate title
+      Animated.parallel([
+        Animated.timing(titleSlide, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }),
+        Animated.timing(titleOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Animate features
+        Animated.timing(featuresOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => {
+          // Stop loading and show button after short delay
+          setTimeout(() => {
+            setIsLoading(false);
+            setShowButton(true);
+          }, 800);
+        });
+      });
+    });
+  }, []);
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <LinearGradient colors={T.gradientSplash} style={styles.container}>
+      <View style={{ flex: 0.5 }} />
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <Animated.View
+            style={[
+              styles.iconBox,
+              {
+                backgroundColor: "rgba(255,255,255,0.15)",
+                borderColor: "rgba(255,255,255,0.25)",
+                transform: [{ scale: iconScale }],
+                opacity: iconOpacity,
+              },
+            ]}
+          >
+            <Calendar size={40} color="#fff" />
+            <View style={[styles.sparkleBadge, { backgroundColor: T.primary }]}>
+              <Sparkles size={12} color="#fff" />
+            </View>
+          </Animated.View>
+        </View>
+
+        <Animated.View
+          style={[
+            styles.titleContainer,
+            {
+              transform: [{ translateY: titleSlide }],
+              opacity: titleOpacity,
+            },
+          ]}
+        >
+          <Text style={styles.title}>UniEvents</Text>
+          <Text style={styles.subtitle}>AI-Powered University Event Hub</Text>
+        </Animated.View>
+
+        <Animated.View style={[styles.features, { opacity: featuresOpacity }]}>
+          {[
+            { icon: Sparkles, text: "Personalized AI event recommendations" },
+            { icon: Calendar, text: "Register for events in one tap" },
+            { icon: Bell, text: "Smart notifications for your interests" },
+          ].map(({ icon: Icon, text }, i) => (
+            <View key={i} style={styles.featureItem}>
+              <Icon size={15} color="#fff" />
+              <Text style={styles.featureText}>{text}</Text>
+            </View>
+          ))}
+        </Animated.View>
+      </View>
+
+      <View style={{ flex: 0.3, justifyContent: "flex-end" }}>
+        {isLoading && (
+          <ActivityIndicator size="large" color="#fff" style={{ marginBottom: 24 }} />
+        )}
+
+        {showButton && (
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/login")}
+            style={[styles.btn, { backgroundColor: T.surface }]}
+          >
+            <Text style={[styles.btnText, { color: T.primary }]}>Get Started</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </LinearGradient>
   );
 }
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
+// Dummy import since Bell is used above
+import { Bell } from "lucide-react-native";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    paddingHorizontal: 28,
+    paddingVertical: 40,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  content: {
+    alignItems: "center",
+    gap: 28,
+    width: "100%",
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  iconContainer: {
+    alignItems: "center",
+  },
+  iconBox: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sparkleBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleContainer: {
+    alignItems: "center",
   },
   title: {
-    textAlign: 'center',
+    fontSize: 36,
+    fontWeight: "900",
+    color: "#fff",
+    letterSpacing: -0.5,
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 6,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  features: {
+    width: "100%",
+    gap: 10,
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  featureText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#fff",
+  },
+  btn: {
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  btnText: {
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });
