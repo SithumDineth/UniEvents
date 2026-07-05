@@ -3,9 +3,9 @@ import { useRouter } from "expo-router";
 import { Calendar, CheckCircle, EyeOff, Globe, Send, Trash2, Users } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useTheme } from "../../../contexts/ThemeContext";
-import { apiDeleteEvent, apiGetAllEventsAdmin, apiMarkEventCompleted, apiUpdateEvent } from "../../../services/api";
-import { isEventCompleted } from "../../../utils/eventHelpers";
+import { useTheme } from "@/contexts/ThemeContext";
+import { apiDeleteEvent, apiGetAllEventsAdmin, apiMarkEventCompleted, apiUpdateEvent } from "@/services/api";
+import { isEventCompleted } from "@/utils/eventHelpers";
 
 export default function AdminManage() {
   const router = useRouter();

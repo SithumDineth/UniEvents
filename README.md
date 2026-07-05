@@ -18,7 +18,7 @@ UniEvents/
 ```bash
 cd frontend
 npm install
-npm start
+npm start  # Runs: npx expo start --dev-client
 # Or to run directly on a specific platform:
 npm run android
 npm run ios
@@ -31,7 +31,7 @@ npm run web
 cd backend
 npm install
 # Set up your MongoDB connection in backend/.env
-node server.js
+npm run dev  # Runs with nodemon for auto-reload
 ```
 
 ## Features

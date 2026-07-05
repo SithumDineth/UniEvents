@@ -4,15 +4,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Bell, Calendar, CalendarPlus, CheckCircle2, Clock, Heart, MapPin, Share2, Sparkles, Users } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { BackBtn } from "../../../components/BackBtn";
-import { ErrorView } from "../../../components/ErrorView";
-import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import { Tag } from "../../../components/Tag";
-import { useTheme } from "../../../contexts/ThemeContext";
-import { apiCheckRegistration, apiGetEventById, apiToggleRegistration, apiToggleSavedEvent } from "../../../services/api";
-import { addEventToCalendar } from "../../../utils/calendar";
-import { isEventCompleted } from "../../../utils/eventHelpers";
-import { hasReminder, removeReminder, scheduleEventReminder } from "../../../utils/reminders";
+import { BackBtn } from "@/components/BackBtn";
+import { ErrorView } from "@/components/ErrorView";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { Tag } from "@/components/Tag";
+import { useTheme } from "@/contexts/ThemeContext";
+import { apiCheckRegistration, apiGetEventById, apiToggleRegistration, apiToggleSavedEvent } from "@/services/api";
+import { addEventToCalendar } from "@/utils/calendar";
+import { isEventCompleted } from "@/utils/eventHelpers";
+import { hasReminder, removeReminder, scheduleEventReminder } from "@/utils/reminders";
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

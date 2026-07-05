@@ -1,3 +1,9 @@
+import { ErrorView } from "@/components/ErrorView";
+import { Field } from "@/components/Field";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { useTheme } from "@/contexts/ThemeContext";
+import { apiDeleteEvent, apiGetAllEventsAdmin, apiGetAllUsers, apiRegister } from "@/services/api";
+import { isEventCompleted } from "@/utils/eventHelpers";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -26,12 +32,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { ErrorView } from "../../../components/ErrorView";
-import { Field } from "../../../components/Field";
-import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import { useTheme } from "../../../contexts/ThemeContext";
-import { apiDeleteEvent, apiGetAllEventsAdmin, apiGetAllUsers, apiRegister } from "../../../services/api";
-import { isEventCompleted } from "../../../utils/eventHelpers";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
   }
 
   if (error) {
-    return <ErrorView message={error} onRetry={loadEvents} style={{ backgroundColor: T.bg }} />;
+    return <ErrorView message={error} onRetry={loadData} style={{ backgroundColor: T.bg }} />;
   }
 
   return (
@@ -245,8 +245,8 @@ export default function AdminDashboard() {
             { label: "Published", val: published, icon: CheckCircle2, color: T.green },
             { label: "Registrations", val: totalAttendees, icon: Users, color: T.secondary },
             { label: "Drafts", val: events.length - published, icon: FileText, color: T.orange },
-            { label: "Completed", val: completedEventsList.length, icon: CheckCircle2, color: T.purple || "#9333ea" },
-            { label: "Total Students", val: totalStudents, icon: UserPlus, color: T.blue || "#0ea5e9" },
+            { label: "Completed", val: completedEventsList.length, icon: CheckCircle2, color: T.purple },
+            { label: "Total Students", val: totalStudents, icon: UserPlus, color: T.blue },
           ].map((s) => (
             <View key={s.label} style={[styles.statCard, { backgroundColor: T.surface, borderColor: T.border }]}>
               <View style={[styles.statIconWrapper, { backgroundColor: s.color + "20" }]}>

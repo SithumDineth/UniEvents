@@ -14,6 +14,10 @@ export interface Theme {
   orangeSoft: string;
   red: string;
   redSoft: string;
+  purple: string;
+  purpleSoft: string;
+  blue: string;
+  blueSoft: string;
   text: string;
   textMuted: string;
   textDim: string;
@@ -37,6 +41,10 @@ export const DARK: Theme = {
   orangeSoft: "rgba(232,148,58,0.12)",
   red: "#E05570",
   redSoft: "rgba(224,85,112,0.12)",
+  purple: "#9333ea",
+  purpleSoft: "rgba(147,51,234,0.12)",
+  blue: "#0ea5e9",
+  blueSoft: "rgba(14,165,233,0.12)",
   text: "#FFFFFF",
   textMuted: "#8A9BC0",
   textDim: "#3D4F70",
@@ -60,6 +68,10 @@ export const LIGHT: Theme = {
   orangeSoft: "rgba(212,134,58,0.10)",
   red: "#C94B6A",
   redSoft: "rgba(201,75,106,0.10)",
+  purple: "#9333ea",
+  purpleSoft: "rgba(147,51,234,0.10)",
+  blue: "#0ea5e9",
+  blueSoft: "rgba(14,165,233,0.10)",
   text: "#1A1F36",
   textMuted: "#5A6480",
   textDim: "#AEBACC",
