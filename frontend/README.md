@@ -20,7 +20,7 @@ This is the React Native/Expo frontend for the UniEvents university event manage
    ```bash
    npm run android
    npm run ios
-   npm run web
+   npm run we
    ```
 
 ## Project Structure
@@ -40,6 +40,23 @@ This is the React Native/Expo frontend for the UniEvents university event manage
 ## FCM Setup (Push Notifications)
 
 For push notifications to work, you need to set up Firebase Cloud Messaging (FCM). See [FCM_SETUP.md](./FCM_SETUP.md) for instructions.
+
+## Phone Connection Tips
+
+- **Same Wi-Fi**: Ensure your phone is connected to the **same Wi-Fi/hotspot** as your laptop
+- **Manual URL Entry**: If QR scan fails, enter `exp://[YOUR_LAPTOP_IP]:8081` in your dev client
+  (Find your laptop's IP with `ipconfig` on Windows or `ifconfig` on macOS/Linux)
+- **Firewall**: Allow incoming connections for Node.js/Expo in your firewall settings
+- **Backend API URL**: Update `API_BASE_URL` in `src/services/api.ts` to use your laptop's IP
+  (e.g., `http://192.168.8.104:5000/api` → `http://10.185.214.26:5000/api`)
+
+## Switching Networks?
+When you change Wi-Fi (e.g., from hotspot to home Wi-Fi):
+1. Find your laptop's new IP address
+2. Update `API_BASE_URL` in `src/services/api.ts`
+3. Reload your app
+
+The backend accepts connections from **any network** (no blocking).
 
 ## Learn More
 
