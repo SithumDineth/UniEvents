@@ -10,7 +10,7 @@ import { apiCreateEvent } from "../../../services/api";
 
 const CATEGORIES = ["Tech", "Academic", "Design", "Social", "AI"];
 const ACCENTS = ["primary", "secondary", "green", "orange", "red"];
-const TAGS = ["New", "AI Pick", "Trending", "Popular"];
+const TAGS = ["New", "Trending", "Popular"];
 
 export default function AdminPublish() {
   const router = useRouter();

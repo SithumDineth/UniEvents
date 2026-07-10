@@ -12,7 +12,7 @@ import { apiGetEventById, apiUpdateEvent } from "../../../services/api";
 
 const CATEGORIES = ["Tech", "Academic", "Design", "Social", "AI"];
 const ACCENTS = ["primary", "secondary", "green", "orange", "red"];
-const TAGS = ["New", "AI Pick", "Trending", "Popular"];
+const TAGS = ["New", "Trending", "Popular"];
 
 export default function AdminEdit() {
   const router = useRouter();

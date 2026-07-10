@@ -2,6 +2,7 @@ const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const User = require('../models/User');
 const { sendPushNotifications } = require('../utils/pushNotifications');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // @desc    Get all published events (with optional search & category filter)
 // @route   GET /api/events
@@ -296,6 +297,7 @@ const getEventRegistrations = async (req, res) => {
 const getRecommendations = async (req, res) => {
   try {
     const user = req.user;
+    console.log("AI Recommendations: User data received:", user);
     // Build filter to include events where completed is false OR doesn't exist
     const notCompletedFilter = {
       $or: [
@@ -304,27 +306,123 @@ const getRecommendations = async (req, res) => {
       ]
     };
 
-    if (!user.interests || user.interests.length === 0) {
-      const events = await Event.find({ published: true, ...notCompletedFilter }).sort({ attendeesCount: -1 }).limit(5);
-      return res.json(events);
+    // Get all published, not completed events
+    const allEvents = await Event.find({ published: true, ...notCompletedFilter });
+
+    if (allEvents.length === 0) {
+      return res.json([]);
     }
 
-    const interestMap = {
-      'Hackathons': 'Tech',
-      'AI & ML': 'Tech',
-      'Design': 'Design',
-      'Research': 'Academic',
-      'Social': 'Social',
-      'Tech Talks': 'Tech',
-    };
+    // Get user's registered events
+    const userRegistrations = await Registration.find({ user: user._id });
+    const registeredEventIds = userRegistrations.map(reg => reg.event.toString());
+    console.log("AI Recommendations: Registered event IDs:", registeredEventIds);
 
-    const categories = [...new Set(user.interests.map(i => interestMap[i] || 'Tech'))];
-    const events = await Event.find({ 
-      published: true, 
-      ...notCompletedFilter, 
-      category: { $in: categories } 
-    }).limit(5);
-    res.json(events);
+    // Initialize Google Generative AI client
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Prepare event data for AI
+    const eventsData = allEvents.map(event => ({
+      id: event._id.toString(),
+      title: event.title,
+      category: event.category,
+      description: event.description,
+      organizer: event.organizer,
+      attendeesCount: event.attendeesCount,
+      date: event.date,
+    }));
+
+    // Prepare user profile for AI
+    const userProfile = {
+      interests: user.interests || [],
+      registeredEventIds: registeredEventIds,
+    };
+    console.log("AI Recommendations: User profile for AI:", userProfile);
+
+    let recommendedEventIds = [];
+
+    if (process.env.GOOGLE_API_KEY) {
+      try {
+        const prompt = `You are an AI event recommender for a university events platform.
+        Given the user's interests and registered events, recommend the TOP 5 MOST RELEVANT events from the list below.
+        IMPORTANT: Return ONLY a valid JSON array of event IDs (strings), with NO extra text at all, no explanations, no markdown, just the array like ["id1", "id2", "id3", "id4", "id5"].
+
+        User Profile:
+        ${JSON.stringify(userProfile)}
+
+        Available Events:
+        ${JSON.stringify(eventsData)}`;
+        console.log("AI Recommendations: Sending prompt to Gemini...");
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const responseText = response.text().trim();
+        console.log("AI Recommendations: Gemini response text:", responseText);
+
+        // Clean up response text in case there are extra characters
+        const cleanedResponse = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+        recommendedEventIds = JSON.parse(cleanedResponse);
+        console.log("AI Recommendations: Parsed recommended IDs:", recommendedEventIds);
+      } catch (aiError) {
+        console.error('AI recommendation error:', aiError);
+        // Fallback: use interests-based recommendation, then popular
+        console.log("AI Recommendations: Falling back to interest-based recommendations");
+        if (!user.interests || user.interests.length === 0) {
+          recommendedEventIds = allEvents
+            .sort((a, b) => b.attendeesCount - a.attendeesCount)
+            .slice(0, 5)
+            .map(e => e._id.toString());
+        } else {
+          const interestMap = {
+            'Hackathons': 'Tech',
+            'AI & ML': 'Tech',
+            'Design': 'Design',
+            'Research': 'Academic',
+            'Social': 'Social',
+            'Tech Talks': 'Tech',
+          };
+          const categories = [...new Set(user.interests.map(i => interestMap[i] || 'Tech'))];
+          recommendedEventIds = allEvents
+            .filter(event => categories.includes(event.category))
+            .sort((a, b) => b.attendeesCount - a.attendeesCount)
+            .slice(0, 5)
+            .map(e => e._id.toString());
+        }
+        console.log("AI Recommendations: Using fallback events:", recommendedEventIds);
+      }
+    } else {
+      console.log("AI Recommendations: No API key, using fallback");
+      // Fallback if no API key
+      if (!user.interests || user.interests.length === 0) {
+        recommendedEventIds = allEvents
+          .sort((a, b) => b.attendeesCount - a.attendeesCount)
+          .slice(0, 5)
+          .map(e => e._id.toString());
+      } else {
+        const interestMap = {
+          'Hackathons': 'Tech',
+          'AI & ML': 'Tech',
+          'Design': 'Design',
+          'Research': 'Academic',
+          'Social': 'Social',
+          'Tech Talks': 'Tech',
+        };
+        const categories = [...new Set(user.interests.map(i => interestMap[i] || 'Tech'))];
+        recommendedEventIds = allEvents
+          .filter(event => categories.includes(event.category))
+          .slice(0, 5)
+          .map(e => e._id.toString());
+      }
+      console.log("AI Recommendations: Using fallback events:", recommendedEventIds);
+    }
+
+    // Fetch the recommended events in order
+    const recommendedEvents = recommendedEventIds
+      .map(id => allEvents.find(event => event._id.toString() === id))
+      .filter(Boolean);
+
+    res.json(recommendedEvents);
   } catch (error) {
     console.error("Error in getRecommendations:", error);
     res.status(500).json({ message: 'Server error' });

@@ -34,7 +34,7 @@ export default function LoginScreen() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const data = await apiLogin(email, password);
+      const data = await apiLogin(email, password, tab);
 
       // Save token and user info
       await AsyncStorage.setItem("token", data.token);
