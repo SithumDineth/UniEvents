@@ -68,7 +68,7 @@ const register = async (req, res) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
@@ -83,6 +83,14 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Check if user's role matches the requested role (if provided)
+    if (role && user.role !== role) {
+      const errorMsg = role === 'admin'
+        ? 'Please use student sign in'
+        : 'Please use admin sign in';
+      return res.status(403).json({ message: errorMsg });
     }
 
     res.json({

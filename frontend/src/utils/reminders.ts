@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 
-const REMINDERS_KEY = 'event_reminders';
+const getRemindersKey = (userId: string) => `event_reminders_${userId}`;
 
 export interface EventReminder {
   eventId: string;
@@ -11,11 +11,11 @@ export interface EventReminder {
 }
 
 /**
- * Get all stored event reminders
+ * Get all stored event reminders for a specific user
  */
-export async function getStoredReminders(): Promise<EventReminder[]> {
+export async function getStoredReminders(userId: string): Promise<EventReminder[]> {
   try {
-    const stored = await AsyncStorage.getItem(REMINDERS_KEY);
+    const stored = await AsyncStorage.getItem(getRemindersKey(userId));
     if (!stored) return [];
     const parsed = JSON.parse(stored);
     // Convert string dates back to Date objects
@@ -30,32 +30,32 @@ export async function getStoredReminders(): Promise<EventReminder[]> {
 }
 
 /**
- * Save an event reminder
+ * Save an event reminder for a specific user
  */
-export async function saveReminder(reminder: EventReminder): Promise<void> {
+export async function saveReminder(userId: string, reminder: EventReminder): Promise<void> {
   try {
-    const reminders = await getStoredReminders();
+    const reminders = await getStoredReminders(userId);
     const filtered = reminders.filter(r => r.eventId !== reminder.eventId);
     filtered.push(reminder);
-    await AsyncStorage.setItem(REMINDERS_KEY, JSON.stringify(filtered));
+    await AsyncStorage.setItem(getRemindersKey(userId), JSON.stringify(filtered));
   } catch (e) {
     console.error('Error saving reminder:', e);
   }
 }
 
 /**
- * Remove an event reminder (and cancel notification if scheduled)
+ * Remove an event reminder for a specific user (and cancel notification if scheduled)
  */
-export async function removeReminder(eventId: string): Promise<void> {
+export async function removeReminder(userId: string, eventId: string): Promise<void> {
   try {
-    const reminders = await getStoredReminders();
+    const reminders = await getStoredReminders(userId);
     const reminderToRemove = reminders.find(r => r.eventId === eventId);
     if (reminderToRemove) {
       await Notifications.cancelScheduledNotificationAsync(
         reminderToRemove.notificationId
       );
       await AsyncStorage.setItem(
-        REMINDERS_KEY,
+        getRemindersKey(userId),
         JSON.stringify(reminders.filter(r => r.eventId !== eventId))
       );
     }
@@ -65,10 +65,11 @@ export async function removeReminder(eventId: string): Promise<void> {
 }
 
 /**
- * Schedule a local notification reminder for an event
+ * Schedule a local notification reminder for an event for a specific user
  * Default reminder is 1 day before event
  */
 export async function scheduleEventReminder(
+  userId: string,
   eventId: string,
   eventTitle: string,
   eventDate: Date,
@@ -103,7 +104,7 @@ export async function scheduleEventReminder(
       eventDate,
       notificationId,
     };
-    await saveReminder(reminder);
+    await saveReminder(userId, reminder);
     return reminder;
   } catch (e) {
     console.error('Error scheduling reminder:', e);
@@ -112,11 +113,11 @@ export async function scheduleEventReminder(
 }
 
 /**
- * Check if a reminder is already set for an event
+ * Check if a reminder is already set for an event for a specific user
  */
-export async function hasReminder(eventId: string): Promise<boolean> {
+export async function hasReminder(userId: string, eventId: string): Promise<boolean> {
   try {
-    const reminders = await getStoredReminders();
+    const reminders = await getStoredReminders(userId);
     return reminders.some(r => r.eventId === eventId);
   } catch (e) {
     console.error('Error checking reminder:', e);
@@ -125,16 +126,16 @@ export async function hasReminder(eventId: string): Promise<boolean> {
 }
 
 /**
- * Load all scheduled notifications and clean up old reminders
+ * Load all scheduled notifications and clean up old reminders for a specific user
  */
-export async function cleanUpOldReminders(): Promise<void> {
+export async function cleanUpOldReminders(userId: string): Promise<void> {
   try {
-    const stored = await getStoredReminders();
+    const stored = await getStoredReminders(userId);
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const scheduledIds = new Set(scheduled.map(n => n.identifier));
 
     const validReminders = stored.filter(r => scheduledIds.has(r.notificationId) && new Date(r.eventDate) > new Date());
-    await AsyncStorage.setItem(REMINDERS_KEY, JSON.stringify(validReminders));
+    await AsyncStorage.setItem(getRemindersKey(userId), JSON.stringify(validReminders));
   } catch (e) {
     console.error('Error cleaning up reminders:', e);
   }

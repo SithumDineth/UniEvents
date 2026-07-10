@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // Change this to your computer's local IP when running on a physical device
 // e.g. 'http://192.168.8.104:5000/api'
-export const API_BASE_URL = 'http://10.185.214.26:5000/api';
+export const API_BASE_URL = 'http://192.168.8.104:5000/api';
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getToken = async (): Promise<string | null> => {
@@ -25,11 +25,11 @@ const handleResponse = async (res: Response) => {
 };
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
-export const apiLogin = async (email: string, password: string) => {
+export const apiLogin = async (email: string, password: string, role: 'student' | 'admin') => {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, role }),
   });
   return handleResponse(res);
 };
@@ -120,6 +120,7 @@ export const apiGetEventById = async (id: string) => {
 export const apiGetRecommendations = async () => {
   const res = await fetch(`${API_BASE_URL}/events/recommendations`, {
     headers: await authHeaders(),
+    cache: 'no-cache',
   });
   return handleResponse(res);
 };

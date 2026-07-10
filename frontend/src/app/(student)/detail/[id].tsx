@@ -1,9 +1,3 @@
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Bell, Calendar, CalendarPlus, CheckCircle2, Clock, Heart, MapPin, Share2, Sparkles, Users } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BackBtn } from "@/components/BackBtn";
 import { ErrorView } from "@/components/ErrorView";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
@@ -13,6 +7,14 @@ import { apiCheckRegistration, apiGetEventById, apiToggleRegistration, apiToggle
 import { addEventToCalendar } from "@/utils/calendar";
 import { isEventCompleted } from "@/utils/eventHelpers";
 import { hasReminder, removeReminder, scheduleEventReminder } from "@/utils/reminders";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Notifications from "expo-notifications";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Bell, Calendar, CalendarPlus, CheckCircle2, Clock, Heart, MapPin, Share2, Sparkles, Users } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,11 +29,16 @@ export default function DetailScreen() {
   const [registering, setRegistering] = useState(false);
   const [hasReminderSet, setHasReminderSet] = useState(false);
   const [loadingReminder, setLoadingReminder] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         setError(null);
+        const userStr = await AsyncStorage.getItem("user");
+        const currentUser = userStr ? JSON.parse(userStr) : null;
+        setUser(currentUser);
+        
         const [eventData, statusData] = await Promise.all([
           apiGetEventById(id),
           apiCheckRegistration(id).catch(() => ({ registered: false, saved: false })),
@@ -40,8 +47,10 @@ export default function DetailScreen() {
         setRegistered(statusData.registered);
         setSaved(statusData.saved || false);
         // Check if reminder is set
-        const reminderExists = await hasReminder(id);
-        setHasReminderSet(reminderExists);
+        if (currentUser) {
+          const reminderExists = await hasReminder(currentUser._id, id);
+          setHasReminderSet(reminderExists);
+        }
       } catch (e: any) {
         setError(e.message || "Could not load event details.");
       } finally {
@@ -52,7 +61,7 @@ export default function DetailScreen() {
   }, [id]);
 
   const handleReminder = async () => {
-    if (!event) return;
+    if (!event || !user) return;
     if (isEventCompleted(event)) {
       Alert.alert("Sorry", "You can't set a reminder for a completed event.");
       return;
@@ -60,20 +69,31 @@ export default function DetailScreen() {
     setLoadingReminder(true);
     try {
       if (hasReminderSet) {
-        await removeReminder(id);
+        await removeReminder(user._id, id);
         setHasReminderSet(false);
         Alert.alert("Reminder Removed", "You will no longer receive a reminder for this event.");
       } else {
-        // Parse event date (assuming event.date is something like "Mon, Jul 5" and event.time is "10:00 AM")
+        // Request notification permissions first
+        const { status } = await Notifications.getPermissionsAsync();
+        let finalStatus = status;
+        if (status !== 'granted') {
+          const { status: newStatus } = await Notifications.requestPermissionsAsync();
+          finalStatus = newStatus;
+        }
+        if (finalStatus !== 'granted') {
+          Alert.alert("Permission Required", "Please enable notifications in your device settings to use reminders.");
+          return;
+        }
+        
+        // Parse event date (event.date is like "Jul 12, 2026", event.time is like "9:00 AM")
         let eventDate;
         try {
           if (event.dateTime) {
             eventDate = new Date(event.dateTime);
           } else {
-            // Try to add current year to date string for proper parsing
-            const currentYear = new Date().getFullYear();
-            let dateString = `${event.date} ${currentYear} ${event.time}`;
+            let dateString = `${event.date} ${event.time}`;
             eventDate = new Date(dateString);
+            console.log("Parsed event date:", eventDate);
             
             // If date is still invalid or in past, try a fallback date: tomorrow
             if (isNaN(eventDate.getTime()) || eventDate < new Date()) {
@@ -86,7 +106,7 @@ export default function DetailScreen() {
           eventDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
         }
 
-        const reminder = await scheduleEventReminder(id, event.title, eventDate);
+        const reminder = await scheduleEventReminder(user._id, id, event.title, eventDate);
         if (reminder) {
           setHasReminderSet(true);
           Alert.alert("Reminder Set!", "You'll receive a notification 1 day before this event starts.");
@@ -95,6 +115,7 @@ export default function DetailScreen() {
         }
       }
     } catch (e) {
+      console.error("Reminder error:", e);
       Alert.alert("Error", "Something went wrong with the reminder.");
     } finally {
       setLoadingReminder(false);

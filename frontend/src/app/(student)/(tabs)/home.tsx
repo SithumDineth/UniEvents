@@ -80,9 +80,10 @@ export default function HomeScreen() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Fetch notifications on focus
+  // Reload data and notifications on focus
   useFocusEffect(
     useCallback(() => {
+      loadData();
       const fetchNotifications = async () => {
         try {
           const notifications = await apiGetNotifications();
@@ -93,7 +94,7 @@ export default function HomeScreen() {
         }
       };
       fetchNotifications();
-    }, [])
+    }, [loadData])
   );
 
   // Prevent Android back gesture from leaving home screen
