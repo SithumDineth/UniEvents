@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // Change this to your computer's local IP when running on a physical device
-// e.g. 'http://192.168.8.104:5000/api'
+// e.g. 'http://192.168.8.104:5000/api' - router
+// 10.185.214.26 - mobile hostpot
 export const API_BASE_URL = 'http://192.168.8.104:5000/api';
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
